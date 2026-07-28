@@ -18,6 +18,16 @@ DROP TABLE IF EXISTS "users" CASCADE;
 
 -- 2. CREATE ENUM TYPES IF NOT EXISTS
 DO $$ BEGIN
+  CREATE TYPE "public"."enum_users_role" AS ENUM('admin', 'teacher', 'student');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE "public"."enum_users_status" AS ENUM('active', 'inactive');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
   CREATE TYPE "public"."enum_students_internship_type" AS ENUM('THUC_TAP', 'DO_AN');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
@@ -33,8 +43,8 @@ CREATE TABLE "users" (
     "email" VARCHAR(255) NOT NULL UNIQUE,
     "password" VARCHAR(255) NOT NULL,
     "full_name" VARCHAR(255) NOT NULL,
-    "role" VARCHAR(50) NOT NULL DEFAULT 'student',
-    "status" VARCHAR(50) NOT NULL DEFAULT 'active',
+    "role" "public"."enum_users_role" NOT NULL DEFAULT 'student',
+    "status" "public"."enum_users_status" NOT NULL DEFAULT 'active',
     "created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

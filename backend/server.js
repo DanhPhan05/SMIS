@@ -176,6 +176,42 @@ async function startServer() {
         await sequelize.query(`DROP TABLE IF EXISTS "scores" CASCADE;`);
         console.log('✅ Dropped old scores table to apply new schema');
       }
+      // Safe check for users role and status enum conversion
+      await sequelize.query(`
+        DO $$ 
+        BEGIN 
+          CREATE TYPE "public"."enum_users_role" AS ENUM('admin', 'teacher', 'student');
+        EXCEPTION WHEN duplicate_object THEN NULL;
+        END $$;
+
+        DO $$ 
+        BEGIN 
+          CREATE TYPE "public"."enum_users_status" AS ENUM('active', 'inactive');
+        EXCEPTION WHEN duplicate_object THEN NULL;
+        END $$;
+
+        DO $$
+        BEGIN
+          IF EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_name='users' AND column_name='role' AND data_type LIKE 'character%'
+          ) THEN
+            ALTER TABLE "users" ALTER COLUMN "role" DROP DEFAULT;
+            ALTER TABLE "users" ALTER COLUMN "role" TYPE "public"."enum_users_role" USING ("role"::"public"."enum_users_role");
+            ALTER TABLE "users" ALTER COLUMN "role" SET DEFAULT 'student'::"public"."enum_users_role";
+          END IF;
+
+          IF EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_name='users' AND column_name='status' AND data_type LIKE 'character%'
+          ) THEN
+            ALTER TABLE "users" ALTER COLUMN "status" DROP DEFAULT;
+            ALTER TABLE "users" ALTER COLUMN "status" TYPE "public"."enum_users_status" USING ("status"::"public"."enum_users_status");
+            ALTER TABLE "users" ALTER COLUMN "status" SET DEFAULT 'active'::"public"."enum_users_status";
+          END IF;
+        END $$;
+      `);
+      console.log('✅ Users role and status enum migration check completed');
       console.log('✅ Migration check completed');
     } catch (migErr) {
       console.log('⚠️ Migration note:', migErr.message);
