@@ -21,8 +21,8 @@ export default function AdminLogin() {
   }, [user, navigate]);
 
   const handleFillDemo = () => {
-    setEmail('admin@university.edu.vn');
-    setPassword('Admin@123');
+    setEmail('admin@huflit.edu.vn');
+    setPassword('Admin@2026');
   };
 
   const handleSubmit = async (e) => {
@@ -62,7 +62,7 @@ export default function AdminLogin() {
               className="input"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              placeholder="admin@university.edu.vn"
+              placeholder="admin@huflit.edu.vn"
               required
             />
           </div>
@@ -109,8 +109,8 @@ export default function AdminLogin() {
             </div>
 
             <div style={{ fontSize: '0.8125rem', color: 'var(--text)', wordBreak: 'break-all' }}>
-              <div><strong>Email:</strong> admin@university.edu.vn</div>
-              <div><strong>Password:</strong> Admin@123</div>
+              <div><strong>Email:</strong> admin@huflit.edu.vn</div>
+              <div><strong>Password:</strong> Admin@2026</div>
             </div>
           </div>
         </div>
