@@ -12,7 +12,7 @@ if (process.env.DATABASE_URL) {
       underscored: true,
     },
     pool: {
-      max: 10,
+      max: 5,
       min: 0,
       acquire: 30000,
       idle: 10000,
@@ -22,6 +22,8 @@ if (process.env.DATABASE_URL) {
         require: true,
         rejectUnauthorized: false,
       },
+      // Force IPv4 — Render free tier doesn't support IPv6
+      family: 4,
     },
   });
 } else {
