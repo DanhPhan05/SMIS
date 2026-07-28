@@ -192,6 +192,9 @@ async function startServer() {
     });
   } catch (error) {
     console.error('❌ Unable to start server:', error.message);
+    console.error('❌ Full error:', error);
+    console.error('❌ DATABASE_URL set:', !!process.env.DATABASE_URL);
+    console.error('❌ DB_HOST:', process.env.DB_HOST || 'not set');
     process.exit(1);
   }
 }
