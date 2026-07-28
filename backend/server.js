@@ -176,42 +176,122 @@ async function startServer() {
         await sequelize.query(`DROP TABLE IF EXISTS "scores" CASCADE;`);
         console.log('✅ Dropped old scores table to apply new schema');
       }
-      // Safe check for users role and status enum conversion
+      // Safe check for ALL enum conversions across models
       await sequelize.query(`
         DO $$ 
         BEGIN 
           CREATE TYPE "public"."enum_users_role" AS ENUM('admin', 'teacher', 'student');
-        EXCEPTION WHEN duplicate_object THEN NULL;
-        END $$;
+        EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-        DO $$ 
-        BEGIN 
+        DO $$ BEGIN 
           CREATE TYPE "public"."enum_users_status" AS ENUM('active', 'inactive');
-        EXCEPTION WHEN duplicate_object THEN NULL;
-        END $$;
+        EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+        DO $$ BEGIN 
+          CREATE TYPE "public"."enum_students_academic_status" AS ENUM('ACTIVE', 'GRADUATED', 'INACTIVE');
+        EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+        DO $$ BEGIN 
+          CREATE TYPE "public"."enum_students_internship_type" AS ENUM('THUC_TAP', 'DO_AN');
+        EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+        DO $$ BEGIN 
+          CREATE TYPE "public"."enum_students_internship_status" AS ENUM('not_started', 'in_progress', 'completed', 'suspended');
+        EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+        DO $$ BEGIN 
+          CREATE TYPE "public"."enum_weekly_reports_status" AS ENUM('submitted', 'viewed', 'needs_revision', 'approved');
+        EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+        DO $$ BEGIN 
+          CREATE TYPE "public"."enum_scores_score_type" AS ENUM('TEACHER', 'COMPANY');
+        EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+        DO $$ BEGIN 
+          CREATE TYPE "public"."enum_supervision_requests_status" AS ENUM('PENDING', 'APPROVED', 'REJECTED');
+        EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+        DO $$ BEGIN 
+          CREATE TYPE "public"."enum_notifications_type" AS ENUM('supervision_request', 'request_approved', 'request_rejected', 'report_commented', 'general');
+        EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+        DO $$ BEGIN 
+          CREATE TYPE "public"."enum_import_logs_import_type" AS ENUM('company', 'student', 'teacher');
+        EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
         DO $$
         BEGIN
-          IF EXISTS (
-            SELECT 1 FROM information_schema.columns 
-            WHERE table_name='users' AND column_name='role' AND data_type LIKE 'character%'
-          ) THEN
+          -- 1. Users role
+          IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='role' AND data_type LIKE 'character%') THEN
             ALTER TABLE "users" ALTER COLUMN "role" DROP DEFAULT;
             ALTER TABLE "users" ALTER COLUMN "role" TYPE "public"."enum_users_role" USING ("role"::"public"."enum_users_role");
             ALTER TABLE "users" ALTER COLUMN "role" SET DEFAULT 'student'::"public"."enum_users_role";
           END IF;
 
-          IF EXISTS (
-            SELECT 1 FROM information_schema.columns 
-            WHERE table_name='users' AND column_name='status' AND data_type LIKE 'character%'
-          ) THEN
+          -- 2. Users status
+          IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='status' AND data_type LIKE 'character%') THEN
             ALTER TABLE "users" ALTER COLUMN "status" DROP DEFAULT;
             ALTER TABLE "users" ALTER COLUMN "status" TYPE "public"."enum_users_status" USING ("status"::"public"."enum_users_status");
             ALTER TABLE "users" ALTER COLUMN "status" SET DEFAULT 'active'::"public"."enum_users_status";
           END IF;
+
+          -- 3. Students academic_status
+          IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='students' AND column_name='academic_status' AND data_type LIKE 'character%') THEN
+            ALTER TABLE "students" ALTER COLUMN "academic_status" DROP DEFAULT;
+            ALTER TABLE "students" ALTER COLUMN "academic_status" TYPE "public"."enum_students_academic_status" USING ("academic_status"::"public"."enum_students_academic_status");
+            ALTER TABLE "students" ALTER COLUMN "academic_status" SET DEFAULT 'ACTIVE'::"public"."enum_students_academic_status";
+          END IF;
+
+          -- 4. Students internship_type
+          IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='students' AND column_name='internship_type' AND data_type LIKE 'character%') THEN
+            ALTER TABLE "students" ALTER COLUMN "internship_type" DROP DEFAULT;
+            ALTER TABLE "students" ALTER COLUMN "internship_type" TYPE "public"."enum_students_internship_type" USING ("internship_type"::"public"."enum_students_internship_type");
+            ALTER TABLE "students" ALTER COLUMN "internship_type" SET DEFAULT 'THUC_TAP'::"public"."enum_students_internship_type";
+          END IF;
+
+          -- 5. Students internship_status
+          IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='students' AND column_name='internship_status' AND data_type LIKE 'character%') THEN
+            ALTER TABLE "students" ALTER COLUMN "internship_status" DROP DEFAULT;
+            ALTER TABLE "students" ALTER COLUMN "internship_status" TYPE "public"."enum_students_internship_status" USING ("internship_status"::"public"."enum_students_internship_status");
+            ALTER TABLE "students" ALTER COLUMN "internship_status" SET DEFAULT 'not_started'::"public"."enum_students_internship_status";
+          END IF;
+
+          -- 6. Weekly reports status
+          IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='weekly_reports' AND column_name='status' AND data_type LIKE 'character%') THEN
+            ALTER TABLE "weekly_reports" ALTER COLUMN "status" DROP DEFAULT;
+            ALTER TABLE "weekly_reports" ALTER COLUMN "status" TYPE "public"."enum_weekly_reports_status" USING ("status"::"public"."enum_weekly_reports_status");
+            ALTER TABLE "weekly_reports" ALTER COLUMN "status" SET DEFAULT 'submitted'::"public"."enum_weekly_reports_status";
+          END IF;
+
+          -- 7. Scores score_type
+          IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='scores' AND column_name='score_type' AND data_type LIKE 'character%') THEN
+            ALTER TABLE "scores" ALTER COLUMN "score_type" DROP DEFAULT;
+            ALTER TABLE "scores" ALTER COLUMN "score_type" TYPE "public"."enum_scores_score_type" USING ("score_type"::"public"."enum_scores_score_type");
+            ALTER TABLE "scores" ALTER COLUMN "score_type" SET DEFAULT 'TEACHER'::"public"."enum_scores_score_type";
+          END IF;
+
+          -- 8. Supervision requests status
+          IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='supervision_requests' AND column_name='status' AND data_type LIKE 'character%') THEN
+            ALTER TABLE "supervision_requests" ALTER COLUMN "status" DROP DEFAULT;
+            ALTER TABLE "supervision_requests" ALTER COLUMN "status" TYPE "public"."enum_supervision_requests_status" USING ("status"::"public"."enum_supervision_requests_status");
+            ALTER TABLE "supervision_requests" ALTER COLUMN "status" SET DEFAULT 'PENDING'::"public"."enum_supervision_requests_status";
+          END IF;
+
+          -- 9. Notifications type
+          IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='notifications' AND column_name='type' AND data_type LIKE 'character%') THEN
+            ALTER TABLE "notifications" ALTER COLUMN "type" DROP DEFAULT;
+            ALTER TABLE "notifications" ALTER COLUMN "type" TYPE "public"."enum_notifications_type" USING ("type"::"public"."enum_notifications_type");
+            ALTER TABLE "notifications" ALTER COLUMN "type" SET DEFAULT 'general'::"public"."enum_notifications_type";
+          END IF;
+
+          -- 10. Import logs import_type
+          IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='import_logs' AND column_name='import_type' AND data_type LIKE 'character%') THEN
+            ALTER TABLE "import_logs" ALTER COLUMN "import_type" DROP DEFAULT;
+            ALTER TABLE "import_logs" ALTER COLUMN "import_type" TYPE "public"."enum_import_logs_import_type" USING ("import_type"::"public"."enum_import_logs_import_type");
+          END IF;
         END $$;
       `);
-      console.log('✅ Users role and status enum migration check completed');
+      console.log('✅ All enum columns migration check completed');
       console.log('✅ Migration check completed');
     } catch (migErr) {
       console.log('⚠️ Migration note:', migErr.message);
