@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 // Determine API base URL dynamically
 const getBaseURL = () => {
   if (import.meta.env.VITE_API_URL) {
