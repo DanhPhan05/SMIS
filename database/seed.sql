@@ -1,0 +1,2 @@
+-- Run seed.js to populate database using Sequelize.
+-- This file is intentionally left blank for raw SQL seeders if needed in the future.

@@ -1,0 +1,18 @@
+{
+  "name": "internship-management-system",
+  "version": "1.0.0",
+  "description": "Root package for Internship Management System",
+  "scripts": {
+    "install:all": "npm install --prefix frontend && npm install --prefix backend",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev": "npx concurrently --raw --kill-others \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:prefix-frontend": "npm run dev --prefix frontend",
+    "dev:prefix-backend": "npm run dev --prefix backend",
+    "build:frontend": "npm run build --prefix frontend",
+    "start": "npm run dev"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
