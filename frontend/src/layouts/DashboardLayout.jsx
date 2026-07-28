@@ -30,8 +30,8 @@ export default function DashboardLayout({ children }) {
 
   useEffect(() => {
     fetchNotifications();
-    // Poll notifications every 10 seconds for real-time updates
-    const interval = setInterval(fetchNotifications, 10000);
+    // Poll notifications every 60 seconds to save Supabase free-tier egress
+    const interval = setInterval(fetchNotifications, 60000);
     return () => clearInterval(interval);
   }, [user, location.pathname]);
 
