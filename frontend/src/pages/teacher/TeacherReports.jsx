@@ -14,15 +14,15 @@ const STATUS_MAP = {
 // Dynamic API base: use env variable in production, fallback to localhost or API instance
 const getApiBase = () => {
   if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '');
+    return import.meta.env.VITE_API_URL.replace(/\/+$/, '');
   }
   if (api.defaults.baseURL && (api.defaults.baseURL.startsWith('http://') || api.defaults.baseURL.startsWith('https://'))) {
-    return api.defaults.baseURL.replace(/\/api\/?$/, '');
+    return api.defaults.baseURL.replace(/\/+$/, '');
   }
   if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-    return 'http://localhost:5000';
+    return 'http://localhost:5000/api';
   }
-  return typeof window !== 'undefined' ? window.location.origin : '';
+  return typeof window !== 'undefined' ? `${window.location.origin}/api` : '/api';
 };
 
 function getPreviewUrl(filePath) {
@@ -44,7 +44,10 @@ function getDownloadUrl(filePath) {
   if (filePath.startsWith('http://') || filePath.startsWith('https://')) return filePath;
 
   const base = getApiBase();
-  const clean = filePath.replace(/\\/g, '/').replace(/^\/+/, '');
+  let clean = filePath.replace(/\\/g, '/').replace(/^\/+/, '');
+  if (!clean.startsWith('uploads/')) {
+    clean = `uploads/${clean}`;
+  }
   return `${base}/${clean}`;
 }
 

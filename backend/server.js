@@ -35,9 +35,10 @@ app.use(morgan('dev'));
 
 // ── Static Files ──────────────────────────────────────────────────────────────
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ── File Preview (inline) ─────────────────────────────────────────────────────
-app.get('/preview/:folder/:filename', (req, res) => {
+const handleFilePreview = (req, res) => {
   const { folder, filename } = req.params;
   // Only allow specific folders
   if (!['reports', 'imports'].includes(folder)) {
@@ -64,7 +65,10 @@ app.get('/preview/:folder/:filename', (req, res) => {
       }
     }
   });
-});
+};
+
+app.get('/preview/:folder/:filename', handleFilePreview);
+app.get('/api/preview/:folder/:filename', handleFilePreview);
 
 // ── API Routes ────────────────────────────────────────────────────────────────
 app.use('/api', routes);
