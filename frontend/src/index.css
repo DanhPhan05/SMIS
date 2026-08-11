@@ -209,7 +209,7 @@ button {
 /* Animations */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  to { opacity: 1; transform: none; }
 }
 
 .animate-fade-in {
@@ -224,9 +224,9 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 9999;
   backdrop-filter: blur(4px);
-  padding: 1rem;
+  padding: 1.5rem 1rem;
 }
 
 .modal-content {
@@ -235,10 +235,11 @@ button {
   padding: 1.25rem 1.5rem;
   width: 100%;
   max-width: 36rem;
-  max-height: calc(100vh - 2rem);
+  max-height: calc(100vh - 3rem);
   overflow-y: auto;
   box-shadow: var(--shadow-lg);
   animation: modalSlideIn 0.22s ease-out forwards;
+  margin: auto;
 }
 
 /* Compact form groups inside modals */
@@ -267,7 +268,7 @@ button {
 
 @keyframes modalSlideIn {
   from { opacity: 0; transform: translateY(-16px) scale(0.98); }
-  to   { opacity: 1; transform: translateY(0)   scale(1); }
+  to   { opacity: 1; transform: none; }
 }
 
 /* SIMS 4.0 Badges & Buttons */

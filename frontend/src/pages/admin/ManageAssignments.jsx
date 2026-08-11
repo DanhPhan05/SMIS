@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import api from '../../services/api';
 import { Plus, X, Check } from 'lucide-react';
@@ -72,7 +73,7 @@ export default function ManageAssignments() {
         <button className="btn btn-primary" onClick={openCreate}><Plus size={16} /> Phân công mới</button>
       </div>
 
-      {showForm && (
+      {showForm && createPortal(
         <div className="modal-overlay" onClick={() => setShowForm(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '540px' }}>
             <div className="modal-header">
@@ -140,7 +141,8 @@ export default function ManageAssignments() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <div className="card" style={{ padding: '0' }}>
