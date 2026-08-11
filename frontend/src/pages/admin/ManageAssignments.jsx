@@ -4,24 +4,6 @@ import DashboardLayout from '../../layouts/DashboardLayout';
 import api from '../../services/api';
 import { Plus, X, Check } from 'lucide-react';
 
-// Dữ liệu Ngành / Chuyên ngành
-const NGANH_DATA = [
-  {
-    label: 'Ngành Công nghệ thông tin',
-    value: 'CNTT',
-    children: [
-      { label: 'Chuyên ngành Công nghệ phần mềm', value: 'CNTT - CN Phần mềm' },
-      { label: 'Chuyên ngành Mạng máy tính và An ninh mạng', value: 'CNTT - Mạng & An ninh mạng' },
-      { label: 'Chuyên ngành Hệ thống thông tin', value: 'CNTT - Hệ thống thông tin' },
-      { label: 'Chuyên ngành Khoa học dữ liệu', value: 'CNTT - Khoa học dữ liệu' },
-      { label: 'Chuyên ngành Thiết kế vi mạch', value: 'CNTT - Thiết kế vi mạch' },
-    ],
-  },
-  { label: 'Ngành Kỹ thuật phần mềm', value: 'Kỹ thuật phần mềm', children: [] },
-  { label: 'Ngành Trí tuệ nhân tạo', value: 'Trí tuệ nhân tạo', children: [] },
-  { label: 'Ngành Thương mại điện tử', value: 'Thương mại điện tử', children: [] },
-];
-
 const NOTES_MAX_LENGTH = 200;
 
 export default function ManageAssignments() {
@@ -31,7 +13,7 @@ export default function ManageAssignments() {
   const [showForm, setShowForm] = useState(false);
   const [students, setStudents] = useState([]);
   const [teachers, setTeachers] = useState([]);
-  const [form, setForm] = useState({ student_id: '', teacher_id: '', nganh: '', notes: '' });
+  const [form, setForm] = useState({ student_id: '', teacher_id: '', notes: '' });
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -48,7 +30,7 @@ export default function ManageAssignments() {
   useEffect(() => { fetchAssignments(1); }, [fetchAssignments]);
 
   const openCreate = async () => {
-    setForm({ student_id: '', teacher_id: '', nganh: '', notes: '' }); setFormError('');
+    setForm({ student_id: '', teacher_id: '', notes: '' }); setFormError('');
     try {
       const [sRes, tRes] = await Promise.all([api.get('/students?limit=100'), api.get('/teachers?limit=100')]);
       setStudents(sRes.data.data || []);
@@ -60,7 +42,11 @@ export default function ManageAssignments() {
   const handleSave = async () => {
     setSaving(true); setFormError('');
     try {
-      await api.post('/assignments', { student_id: parseInt(form.student_id), teacher_id: parseInt(form.teacher_id), notes: form.notes ? `[${form.nganh}] ${form.notes}`.trim() : (form.nganh || '') });
+      await api.post('/assignments', { 
+        student_id: parseInt(form.student_id), 
+        teacher_id: parseInt(form.teacher_id), 
+        notes: form.notes ? form.notes.trim() : '' 
+      });
       setShowForm(false); fetchAssignments(pagination.page);
     } catch (err) { setFormError(err.response?.data?.message || 'Có lỗi xảy ra'); }
     finally { setSaving(false); }
@@ -93,27 +79,6 @@ export default function ManageAssignments() {
               <select className="input" value={form.teacher_id} onChange={e => setForm(p => ({ ...p, teacher_id: e.target.value }))}>
                 <option value="">-- Chọn giảng viên --</option>
                 {teachers.map(t => <option key={t.id} value={t.id}>{t.teacher_code} - {t.full_name}</option>)}
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Ngành / Chuyên ngành</label>
-              <select
-                className="input"
-                value={form.nganh}
-                onChange={e => setForm(p => ({ ...p, nganh: e.target.value }))}
-              >
-                <option value="">-- Chọn ngành / chuyên ngành --</option>
-                {NGANH_DATA.map(nganh => (
-                  nganh.children.length > 0 ? (
-                    <optgroup key={nganh.value} label={nganh.label}>
-                      {nganh.children.map(cn => (
-                        <option key={cn.value} value={cn.value}>{cn.label}</option>
-                      ))}
-                    </optgroup>
-                  ) : (
-                    <option key={nganh.value} value={nganh.value}>{nganh.label}</option>
-                  )
-                ))}
               </select>
             </div>
             <div className="form-group">

@@ -6,6 +6,17 @@ import { Search, Plus, Trash2, Edit, X, Check } from 'lucide-react';
 
 import { useToast } from '../../context/ToastContext';
 
+const DEPARTMENTS = [
+  'Chuyên ngành Công nghệ phần mềm',
+  'Chuyên ngành Mạng máy tính và An ninh mạng',
+  'Chuyên ngành Hệ thống thông tin',
+  'Chuyên ngành Khoa học dữ liệu',
+  'Chuyên ngành Thiết kế vi mạch',
+  'Ngành Kỹ thuật phần mềm',
+  'Ngành Trí tuệ nhân tạo',
+  'Ngành Thương mại điện tử',
+];
+
 const EMPTY_FORM = { full_name: '', email: '', department: '', phone: '' };
 
 export default function ManageTeachers() {
@@ -100,27 +111,70 @@ export default function ManageTeachers() {
       </div>
 
       {showForm && createPortal(
-        <div className="modal-overlay">
-          <div className="modal-content">
+        <div className="modal-overlay" onClick={() => setShowForm(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '540px' }}>
             <div className="modal-header">
               <h2 style={{ fontWeight: 'bold' }}>{editId ? 'Sửa giảng viên' : 'Thêm giảng viên'}</h2>
-              <button onClick={() => setShowForm(false)}><X size={20} /></button>
+              <button onClick={() => setShowForm(false)} style={{ color: 'var(--text-muted)' }}><X size={20} /></button>
             </div>
 
-            {[
-              { label: 'Họ tên *', key: 'full_name' },
-              { label: 'Email', key: 'email', type: 'email' },
-              { label: 'Khoa/Bộ môn', key: 'department' },
-              { label: 'Số điện thoại', key: 'phone' },
-            ].map(f => (
-              <div key={f.key} className="form-group">
-                <label className="form-label">{f.label}</label>
-                <input className="input" type={f.type || 'text'} value={form[f.key] || ''}
-                  onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} />
+            <div className="form-group">
+              <label className="form-label">Họ tên *</label>
+              <input className="input" type="text" value={form.full_name} onChange={e => setForm(p => ({ ...p, full_name: e.target.value }))} />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Email</label>
+              <input className="input" type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Khoa / Bộ môn / Ngành</label>
+              <select
+                className="input"
+                value={form.department}
+                onChange={e => setForm(p => ({ ...p, department: e.target.value }))}
+                style={{ marginBottom: '0.5rem' }}
+              >
+                <option value="">-- Chọn Khoa / Bộ môn / Ngành --</option>
+                {DEPARTMENTS.map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                {DEPARTMENTS.map(dept => {
+                  const isSelected = form.department === dept;
+                  return (
+                    <button
+                      key={dept}
+                      type="button"
+                      onClick={() => setForm(p => ({ ...p, department: dept }))}
+                      style={{
+                        padding: '0.25rem 0.6rem',
+                        fontSize: '0.75rem',
+                        borderRadius: '9999px',
+                        border: `1px solid ${isSelected ? 'var(--primary)' : 'var(--border)'}`,
+                        backgroundColor: isSelected ? 'var(--primary)' : '#f8fafc',
+                        color: isSelected ? '#ffffff' : 'var(--text-main)',
+                        fontWeight: isSelected ? '600' : '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      {dept}
+                    </button>
+                  );
+                })}
               </div>
-            ))}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Số điện thoại</label>
+              <input className="input" type="text" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} />
+            </div>
+
             {formError && (
-              <div style={{ color: 'var(--danger)', background: '#fff0f0', border: '1px solid var(--danger)', borderRadius: 'var(--radius)', padding: '0.75rem', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+              <div style={{ color: 'var(--danger)', background: '#fff0f0', border: '1px solid var(--danger)', borderRadius: 'var(--radius-md)', padding: '0.75rem', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
                 ⚠️ {formError}
                 {(formError.includes('quyền') || formError.includes('403') || formError.includes('token') || formError.includes('đăng nhập')) && (
                   <div style={{ marginTop: '0.5rem' }}>
