@@ -130,31 +130,16 @@ export default function ManageTeachers() {
 
             <div className="form-group">
               <label className="form-label">Khoa / Bộ môn / Ngành</label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
-                {DEPARTMENTS.map(dept => {
-                  const isSelected = form.department === dept;
-                  return (
-                    <button
-                      key={dept}
-                      type="button"
-                      onClick={() => setForm(p => ({ ...p, department: dept }))}
-                      style={{
-                        padding: '0.25rem 0.6rem',
-                        fontSize: '0.75rem',
-                        borderRadius: '9999px',
-                        border: `1px solid ${isSelected ? 'var(--primary)' : 'var(--border)'}`,
-                        backgroundColor: isSelected ? 'var(--primary)' : '#f8fafc',
-                        color: isSelected ? '#ffffff' : 'var(--text-main)',
-                        fontWeight: isSelected ? '600' : '500',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease'
-                      }}
-                    >
-                      {dept}
-                    </button>
-                  );
-                })}
-              </div>
+              <select
+                className="input"
+                value={form.department}
+                onChange={e => setForm(p => ({ ...p, department: e.target.value }))}
+              >
+                <option value="">-- Chọn Khoa / Bộ môn / Ngành --</option>
+                {DEPARTMENTS.map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
             </div>
 
             <div className="form-group">
