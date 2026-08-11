@@ -130,17 +130,6 @@ export default function ManageTeachers() {
 
             <div className="form-group">
               <label className="form-label">Khoa / Bộ môn / Ngành</label>
-              <select
-                className="input"
-                value={form.department}
-                onChange={e => setForm(p => ({ ...p, department: e.target.value }))}
-                style={{ marginBottom: '0.5rem' }}
-              >
-                <option value="">-- Chọn Khoa / Bộ môn / Ngành --</option>
-                {DEPARTMENTS.map(d => (
-                  <option key={d} value={d}>{d}</option>
-                ))}
-              </select>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
                 {DEPARTMENTS.map(dept => {
                   const isSelected = form.department === dept;
