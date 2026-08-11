@@ -32,8 +32,12 @@ function getPreviewUrl(filePath) {
   if (filePath.startsWith('http://') || filePath.startsWith('https://')) return filePath;
 
   const base = getApiBase();
-  const clean = filePath.replace(/\\/g, '/').replace(/^\/+/, '');
-  const parts = clean.replace(/^uploads\//, '').split('/');
+  let clean = filePath.replace(/\\/g, '/').replace(/^\/+/, '');
+  clean = clean.replace(/^uploads\//, '');
+  const parts = clean.split('/');
+  if (parts.length === 1) {
+    return `${base}/preview/reports/${parts[0]}`;
+  }
   return `${base}/preview/${parts.join('/')}`;
 }
 
@@ -298,12 +302,21 @@ export default function StudentReports() {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
                 <a 
-                  href={`${API_BASE}/${previewFile.url.includes('/preview/') ? 'uploads/' + previewFile.url.split('/preview/')[1] : previewFile.url.replace(API_BASE + '/', '')}`}
+                  href={getDownloadUrl(previewFile.filePath || previewFile.url)}
                   download
                   className="btn btn-outline"
                   style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
                 >
                   <Download size={14} /> Tải về
+                </a>
+                <a 
+                  href={previewFile.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn btn-outline"
+                  style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                >
+                  <ExternalLink size={14} /> Tab mới
                 </a>
                 <button 
                   onClick={() => setPreviewFile(null)}
@@ -370,7 +383,7 @@ export default function StudentReports() {
                   </div>
                   <div style={{ display: 'flex', gap: '0.75rem' }}>
                     <a 
-                      href={`${API_BASE}/${previewFile.url.includes('/preview/') ? 'uploads/' + previewFile.url.split('/preview/')[1] : previewFile.url.replace(API_BASE + '/', '')}`}
+                      href={getDownloadUrl(previewFile.filePath || previewFile.url)}
                       download
                       className="btn btn-primary"
                       style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
@@ -437,7 +450,21 @@ export default function StudentReports() {
                     >
                       <Eye size={14} /> Xem file
                     </button>
-
+                    <a 
+                      href={getDownloadUrl(r.file_path)}
+                      download
+                      className="btn btn-outline"
+                      style={{ 
+                        padding: '0.3rem 0.65rem', 
+                        fontSize: '0.8rem', 
+                        display: 'inline-flex', 
+                        alignItems: 'center', 
+                        gap: '0.35rem',
+                        borderRadius: '6px'
+                      }}
+                    >
+                      <Download size={14} /> Tải về
+                    </a>
                   </div>
                 )}
 

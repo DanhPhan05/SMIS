@@ -111,169 +111,6 @@ export default function TeacherGrading() {
     }
   };
 
-  const SCORE_OPTIONS = Array.from({ length: 21 }, (_, i) => i * 0.5);
-
-  const ScoreSelect = ({ value, onChange, disabled, options }) => {
-    const [isOpen, setIsOpen] = useState(false);
-
-    return (
-      <div style={{ position: 'relative', width: '100%' }}>
-        {/* Trigger button */}
-        <button
-          type="button"
-          className="input"
-          disabled={disabled}
-          onClick={() => setIsOpen(!isOpen)}
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            width: '100%',
-            fontSize: '1.125rem',
-            fontWeight: '600',
-            textAlign: 'center',
-            height: '42px',
-            cursor: disabled ? 'not-allowed' : 'pointer',
-            background: 'var(--background)',
-            borderColor: 'var(--border)',
-            padding: '0 1rem',
-          }}
-        >
-          <span style={{ margin: '0 auto' }}>
-            {value !== '' && value != null ? parseFloat(value).toFixed(1) : '-- Chọn --'}
-          </span>
-          <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>▼</span>
-        </button>
-
-        {/* Options list */}
-        {isOpen && !disabled && (
-          <>
-            {/* Overlay to close when clicking outside */}
-            <div 
-              onClick={() => setIsOpen(false)} 
-              style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 999 }} 
-            />
-            <div style={{
-              position: 'absolute',
-              top: '46px',
-              left: 0,
-              right: 0,
-              background: 'var(--background)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius)',
-              boxShadow: 'var(--shadow-md)',
-              maxHeight: '160px', // height of ~4 options
-              overflowY: 'auto',
-              zIndex: 1000,
-            }}>
-              <div
-                onClick={() => { onChange(''); setIsOpen(false); }}
-                style={{
-                  padding: '0.5rem',
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                  background: value === '' || value == null ? 'var(--primary-light)' : 'transparent',
-                  borderBottom: '1px solid var(--border)',
-                }}
-              >
-                -- Chọn --
-              </div>
-              {options.map(val => (
-                <div
-                  key={val}
-                  onClick={() => { onChange(String(val)); setIsOpen(false); }}
-                  style={{
-                    padding: '0.5rem',
-                    cursor: 'pointer',
-                    textAlign: 'center',
-                    fontWeight: '600',
-                    background: parseFloat(value) === val ? 'var(--primary-light)' : 'transparent',
-                  }}
-                >
-                  {val.toFixed(1)}
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-    );
-  };
-
-  const ScoreSection = ({ title, icon: Icon, iconColor, form, setForm, scoreType, existingScore, disabled }) => (
-    <div style={{
-      background: 'var(--background)',
-      borderRadius: 'var(--radius)',
-      padding: '1.25rem',
-      marginBottom: '1rem',
-      border: '1px solid var(--border)',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-        <div style={{
-          width: '32px', height: '32px', borderRadius: 'var(--radius-full)',
-          backgroundColor: `${iconColor}15`, color: iconColor,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <Icon size={16} />
-        </div>
-        <h3 style={{ fontWeight: '600', fontSize: '1rem' }}>{title}</h3>
-        {existingScore && <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>Đã chấm</span>}
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-        <div className="form-group" style={{ margin: 0 }}>
-          <label className="form-label" style={{ fontSize: '0.8rem' }}>Chuyên cần (0-10)</label>
-          <ScoreSelect
-            value={form.attendance}
-            onChange={val => setForm(p => ({ ...p, attendance: val }))}
-            disabled={disabled}
-            options={SCORE_OPTIONS}
-          />
-        </div>
-        <div className="form-group" style={{ margin: 0 }}>
-          <label className="form-label" style={{ fontSize: '0.8rem' }}>Chuyên môn (0-10)</label>
-          <ScoreSelect
-            value={form.professional}
-            onChange={val => setForm(p => ({ ...p, professional: val }))}
-            disabled={disabled}
-            options={SCORE_OPTIONS}
-          />
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-        <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-          Trung bình: <strong style={{ color: 'var(--primary)', fontSize: '1rem' }}>{calcAvg(form.attendance, form.professional)}</strong>
-        </span>
-      </div>
-
-      <div className="form-group" style={{ margin: 0, marginBottom: '0.75rem' }}>
-        <label className="form-label" style={{ fontSize: '0.8rem' }}>Ghi chú</label>
-        <textarea className="input" placeholder="Nhận xét (tùy chọn)..." value={form.notes} disabled={disabled}
-          onChange={e => {
-            if (e.target.value.length <= 200) {
-              setForm(p => ({ ...p, notes: e.target.value }));
-            }
-          }}
-          rows={3}
-          style={{ resize: 'vertical', minHeight: '60px' }}
-        />
-        {!disabled && (
-          <div style={{ textAlign: 'right', fontSize: '0.7rem', color: (form.notes || '').length >= 200 ? 'var(--danger)' : 'var(--text-muted)', marginTop: '0.2rem' }}>
-            {(form.notes || '').length}/200
-          </div>
-        )}
-      </div>
-
-      {!disabled && (
-        <button className="btn btn-primary" style={{ width: '100%' }} disabled={saving || form.attendance === '' || form.professional === ''}
-          onClick={() => saveScore(scoreType, form, existingScore)}>
-          <Save size={14} /> {saving ? 'Đang lưu...' : (existingScore ? 'Cập nhật điểm' : 'Lưu điểm')}
-        </button>
-      )}
-    </div>
-  );
-
   return (
     <DashboardLayout>
       <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -359,6 +196,9 @@ export default function TeacherGrading() {
                   setForm={setTeacherForm}
                   scoreType="TEACHER"
                   existingScore={scoreData?.teacherScore}
+                  saving={saving}
+                  calcAvg={calcAvg}
+                  saveScore={saveScore}
                 />
 
                 {/* Điểm Công ty — chỉ hiện khi THUC_TAP */}
@@ -371,6 +211,9 @@ export default function TeacherGrading() {
                     setForm={setCompanyForm}
                     scoreType="COMPANY"
                     existingScore={scoreData?.companyScore}
+                    saving={saving}
+                    calcAvg={calcAvg}
+                    saveScore={saveScore}
                   />
                 )}
 
@@ -396,5 +239,171 @@ export default function TeacherGrading() {
         )}
       </div>
     </DashboardLayout>
+  );
+}
+
+const SCORE_OPTIONS = Array.from({ length: 21 }, (_, i) => i * 0.5);
+
+function ScoreSelect({ value, onChange, disabled, options }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div style={{ position: 'relative', width: '100%' }}>
+      {/* Trigger button */}
+      <button
+        type="button"
+        className="input"
+        disabled={disabled}
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          width: '100%',
+          fontSize: '1.125rem',
+          fontWeight: '600',
+          textAlign: 'center',
+          height: '42px',
+          cursor: disabled ? 'not-allowed' : 'pointer',
+          background: 'var(--background)',
+          borderColor: 'var(--border)',
+          padding: '0 1rem',
+        }}
+      >
+        <span style={{ margin: '0 auto' }}>
+          {value !== '' && value != null ? parseFloat(value).toFixed(1) : '-- Chọn --'}
+        </span>
+        <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>▼</span>
+      </button>
+
+      {/* Options list */}
+      {isOpen && !disabled && (
+        <>
+          {/* Overlay to close when clicking outside */}
+          <div 
+            onClick={() => setIsOpen(false)} 
+            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 999 }} 
+          />
+          <div style={{
+            position: 'absolute',
+            top: '46px',
+            left: 0,
+            right: 0,
+            background: 'var(--background)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius)',
+            boxShadow: 'var(--shadow-md)',
+            maxHeight: '160px', // height of ~4 options
+            overflowY: 'auto',
+            zIndex: 1000,
+          }}>
+            <div
+              onClick={() => { onChange(''); setIsOpen(false); }}
+              style={{
+                padding: '0.5rem',
+                cursor: 'pointer',
+                textAlign: 'center',
+                background: value === '' || value == null ? 'var(--primary-light)' : 'transparent',
+                borderBottom: '1px solid var(--border)',
+              }}
+            >
+              -- Chọn --
+            </div>
+            {options.map(val => (
+              <div
+                key={val}
+                onClick={() => { onChange(String(val)); setIsOpen(false); }}
+                style={{
+                  padding: '0.5rem',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  fontWeight: '600',
+                  background: parseFloat(value) === val ? 'var(--primary-light)' : 'transparent',
+                }}
+              >
+                {val.toFixed(1)}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function ScoreSection({ title, icon: Icon, iconColor, form, setForm, scoreType, existingScore, disabled, saving, calcAvg, saveScore }) {
+  return (
+    <div style={{
+      background: 'var(--background)',
+      borderRadius: 'var(--radius)',
+      padding: '1.25rem',
+      marginBottom: '1rem',
+      border: '1px solid var(--border)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+        <div style={{
+          width: '32px', height: '32px', borderRadius: 'var(--radius-full)',
+          backgroundColor: `${iconColor}15`, color: iconColor,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <Icon size={16} />
+        </div>
+        <h3 style={{ fontWeight: '600', fontSize: '1rem' }}>{title}</h3>
+        {existingScore && <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>Đã chấm</span>}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+        <div className="form-group" style={{ margin: 0 }}>
+          <label className="form-label" style={{ fontSize: '0.8rem' }}>Chuyên cần (0-10)</label>
+          <ScoreSelect
+            value={form.attendance}
+            onChange={val => setForm(p => ({ ...p, attendance: val }))}
+            disabled={disabled}
+            options={SCORE_OPTIONS}
+          />
+        </div>
+        <div className="form-group" style={{ margin: 0 }}>
+          <label className="form-label" style={{ fontSize: '0.8rem' }}>Chuyên môn (0-10)</label>
+          <ScoreSelect
+            value={form.professional}
+            onChange={val => setForm(p => ({ ...p, professional: val }))}
+            disabled={disabled}
+            options={SCORE_OPTIONS}
+          />
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+        <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+          Trung bình: <strong style={{ color: 'var(--primary)', fontSize: '1rem' }}>{calcAvg(form.attendance, form.professional)}</strong>
+        </span>
+      </div>
+
+      <div className="form-group" style={{ margin: 0, marginBottom: '0.75rem' }}>
+        <label className="form-label" style={{ fontSize: '0.8rem' }}>Ghi chú</label>
+        <textarea className="input" placeholder="Nhận xét (tùy chọn)..." value={form.notes || ''} disabled={disabled}
+          onChange={e => {
+            const val = e.target.value;
+            if (val.length <= 200) {
+              setForm(p => ({ ...p, notes: val }));
+            }
+          }}
+          rows={3}
+          style={{ resize: 'vertical', minHeight: '60px' }}
+        />
+        {!disabled && (
+          <div style={{ textAlign: 'right', fontSize: '0.7rem', color: (form.notes || '').length >= 200 ? 'var(--danger)' : 'var(--text-muted)', marginTop: '0.2rem' }}>
+            {(form.notes || '').length}/200
+          </div>
+        )}
+      </div>
+
+      {!disabled && (
+        <button className="btn btn-primary" style={{ width: '100%' }} disabled={saving || form.attendance === '' || form.professional === ''}
+          onClick={() => saveScore(scoreType, form, existingScore)}>
+          <Save size={14} /> {saving ? 'Đang lưu...' : (existingScore ? 'Cập nhật điểm' : 'Lưu điểm')}
+        </button>
+      )}
+    </div>
   );
 }
