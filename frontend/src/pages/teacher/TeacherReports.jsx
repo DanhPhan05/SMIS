@@ -11,24 +11,37 @@ const STATUS_MAP = {
   needs_revision: { label: 'Cần sửa', cls: 'badge-danger' },
 };
 
-const API_BASE = 'http://localhost:5000';
+// Dynamic API base: use env variable in production, fallback to localhost or API instance
+const getApiBase = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '');
+  }
+  if (api.defaults.baseURL && (api.defaults.baseURL.startsWith('http://') || api.defaults.baseURL.startsWith('https://'))) {
+    return api.defaults.baseURL.replace(/\/api\/?$/, '');
+  }
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    return 'http://localhost:5000';
+  }
+  return typeof window !== 'undefined' ? window.location.origin : '';
+};
 
 function getPreviewUrl(filePath) {
   if (!filePath) return null;
+  if (filePath.startsWith('http://') || filePath.startsWith('https://')) return filePath;
+
+  const base = getApiBase();
   const clean = filePath.replace(/\\/g, '/').replace(/^\/+/, '');
-  const ext = clean.split('.').pop().toLowerCase();
-  
-  if (ext === 'pdf') {
-    const parts = clean.replace(/^uploads\//, '').split('/');
-    return `${API_BASE}/preview/${parts.join('/')}`;
-  }
-  return `${API_BASE}/${clean}`;
+  const parts = clean.replace(/^uploads\//, '').split('/');
+  return `${base}/preview/${parts.join('/')}`;
 }
 
 function getDownloadUrl(filePath) {
   if (!filePath) return '#';
+  if (filePath.startsWith('http://') || filePath.startsWith('https://')) return filePath;
+
+  const base = getApiBase();
   const clean = filePath.replace(/\\/g, '/').replace(/^\/+/, '');
-  return `${API_BASE}/${clean}`;
+  return `${base}/${clean}`;
 }
 
 function getFileExt(filePath) {
@@ -50,7 +63,12 @@ export default function TeacherReports() {
     if (previewFile && previewFile.ext === 'docx' && docxContainerRef.current) {
       setDocxLoading(true);
       fetch(previewFile.url)
-        .then(res => res.blob())
+        .then(res => {
+          if (!res.ok) {
+            throw new Error(`Không thể tải file từ máy chủ (Mã lỗi ${res.status})`);
+          }
+          return res.blob();
+        })
         .then(blob => {
           if (docxContainerRef.current) docxContainerRef.current.innerHTML = '';
           import('docx-preview').then(({ renderAsync }) => {
@@ -62,7 +80,13 @@ export default function TeacherReports() {
                 .catch(err => {
                   console.error('Error rendering DOCX:', err);
                   if (docxContainerRef.current) {
-                    docxContainerRef.current.innerHTML = `<p style="color: var(--danger); padding: 2rem; text-align: center;">Không thể render file Word trực tiếp. Vui lòng tải về để xem.</p>`;
+                    docxContainerRef.current.innerHTML = `
+                      <div style="padding: 2.5rem 1rem; text-align: center; color: var(--text-main);">
+                        <p style="margin-bottom: 1rem; font-weight: 500;">Không thể hiển thị bản xem trước cho file Word này trực tiếp.</p>
+                        <a href="${getDownloadUrl(previewFile.filePath)}" download class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                          Tải file về máy để xem
+                        </a>
+                      </div>`;
                   }
                 })
                 .finally(() => setDocxLoading(false));
@@ -72,7 +96,13 @@ export default function TeacherReports() {
         .catch(err => {
           console.error('Error fetching DOCX blob:', err);
           if (docxContainerRef.current) {
-            docxContainerRef.current.innerHTML = `<p style="color: var(--danger); padding: 2rem; text-align: center;">Lỗi tải file từ server.</p>`;
+            docxContainerRef.current.innerHTML = `
+              <div style="padding: 2.5rem 1rem; text-align: center; color: var(--danger); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem;">
+                <p style="font-weight: 500;">${err.message || 'Lỗi tải file từ server.'}</p>
+                <a href="${getDownloadUrl(previewFile.filePath)}" download class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                  Tải file về máy
+                </a>
+              </div>`;
           }
           setDocxLoading(false);
         });

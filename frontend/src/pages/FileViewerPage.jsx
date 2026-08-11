@@ -1,23 +1,49 @@
 import { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { FileText } from 'lucide-react';
+import { FileText, Download } from 'lucide-react';
+import api from '../services/api';
 
-const API_BASE = 'http://localhost:5000';
+// Dynamic API base: use env variable in production, fallback to localhost
+const getApiBase = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '');
+  }
+  if (api.defaults.baseURL && (api.defaults.baseURL.startsWith('http://') || api.defaults.baseURL.startsWith('https://'))) {
+    return api.defaults.baseURL.replace(/\/api\/?$/, '');
+  }
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    return 'http://localhost:5000';
+  }
+  return typeof window !== 'undefined' ? window.location.origin : '';
+};
 
 export default function FileViewerPage() {
   const [searchParams] = useSearchParams();
-  const fileUrl = searchParams.get('url');
+  const rawFileUrl = searchParams.get('url');
   const fileName = searchParams.get('name') || 'File Preview';
   const ext = fileName.split('.').pop().toLowerCase();
   
   const [loading, setLoading] = useState(false);
   const containerRef = useRef(null);
+
+  const fileUrl = (() => {
+    if (!rawFileUrl) return '';
+    if (rawFileUrl.startsWith('http://') || rawFileUrl.startsWith('https://')) return rawFileUrl;
+    const base = getApiBase();
+    const clean = rawFileUrl.replace(/\\/g, '/').replace(/^\/+/, '');
+    return `${base}/${clean}`;
+  })();
   
   useEffect(() => {
     if (ext === 'docx' && fileUrl && containerRef.current) {
       setLoading(true);
       fetch(fileUrl)
-        .then(res => res.blob())
+        .then(res => {
+          if (!res.ok) {
+            throw new Error(`Không thể tải file từ máy chủ (Mã lỗi ${res.status})`);
+          }
+          return res.blob();
+        })
         .then(blob => {
           if (containerRef.current) containerRef.current.innerHTML = '';
           import('docx-preview').then(({ renderAsync }) => {
@@ -29,7 +55,14 @@ export default function FileViewerPage() {
                 .catch(err => {
                   console.error(err);
                   if (containerRef.current) {
-                    containerRef.current.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--danger);">Không thể hiển thị file Word này trực tiếp. Vui lòng tải về để xem.</div>';
+                    containerRef.current.innerHTML = `
+                      <div style="padding: 3rem 1.5rem; text-align: center; color: var(--text-main);">
+                        <p style="margin-bottom: 1rem; font-weight: 500;">Không thể hiển thị bản xem trước cho file Word này trực tiếp.</p>
+                        <a href="${fileUrl}" download class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                          Tải file về máy để xem
+                        </a>
+                      </div>`;
                   }
                 })
                 .finally(() => setLoading(false));
@@ -39,7 +72,13 @@ export default function FileViewerPage() {
         .catch(err => {
           console.error(err);
           if (containerRef.current) {
-            containerRef.current.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--danger);">Lỗi tải file từ máy chủ.</div>';
+            containerRef.current.innerHTML = `
+              <div style="padding: 3rem 1.5rem; text-align: center; color: var(--danger); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem;">
+                <p style="font-weight: 500;">${err.message || 'Lỗi tải file từ server.'}</p>
+                <a href="${fileUrl}" download class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                  Tải file về máy
+                </a>
+              </div>`;
           }
           setLoading(false);
         });

@@ -249,8 +249,20 @@ export default function TeacherGrading() {
 
       <div className="form-group" style={{ margin: 0, marginBottom: '0.75rem' }}>
         <label className="form-label" style={{ fontSize: '0.8rem' }}>Ghi chú</label>
-        <input className="input" placeholder="Nhận xét (tùy chọn)..." value={form.notes} disabled={disabled}
-          onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
+        <textarea className="input" placeholder="Nhận xét (tùy chọn)..." value={form.notes} disabled={disabled}
+          onChange={e => {
+            if (e.target.value.length <= 200) {
+              setForm(p => ({ ...p, notes: e.target.value }));
+            }
+          }}
+          rows={3}
+          style={{ resize: 'vertical', minHeight: '60px' }}
+        />
+        {!disabled && (
+          <div style={{ textAlign: 'right', fontSize: '0.7rem', color: (form.notes || '').length >= 200 ? 'var(--danger)' : 'var(--text-muted)', marginTop: '0.2rem' }}>
+            {(form.notes || '').length}/200
+          </div>
+        )}
       </div>
 
       {!disabled && (

@@ -13,26 +13,37 @@ const STATUS_MAP = {
 
 const EMPTY_FORM = { week_number: '', content: '' };
 
-const API_BASE = 'http://localhost:5000';
+// Dynamic API base: use env variable in production, fallback to localhost or API instance
+const getApiBase = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '');
+  }
+  if (api.defaults.baseURL && (api.defaults.baseURL.startsWith('http://') || api.defaults.baseURL.startsWith('https://'))) {
+    return api.defaults.baseURL.replace(/\/api\/?$/, '');
+  }
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    return 'http://localhost:5000';
+  }
+  return typeof window !== 'undefined' ? window.location.origin : '';
+};
 
-/**
- * Builds a preview URL for a given file_path.
- * PDF: use the backend inline preview route.
- * Word: use Google Docs Viewer for rendering (requires a publicly accessible URL fallback).
- */
 function getPreviewUrl(filePath) {
   if (!filePath) return null;
-  // Normalise: "uploads/reports/filename.ext"
+  if (filePath.startsWith('http://') || filePath.startsWith('https://')) return filePath;
+
+  const base = getApiBase();
   const clean = filePath.replace(/\\/g, '/').replace(/^\/+/, '');
-  const ext = clean.split('.').pop().toLowerCase();
-  
-  if (ext === 'pdf') {
-    // Convert uploads/reports/file.pdf -> /preview/reports/file.pdf
-    const parts = clean.replace(/^uploads\//, '').split('/');
-    return `${API_BASE}/preview/${parts.join('/')}`;
-  }
-  // For doc/docx, use the direct download URL (opens natively in some browsers)
-  return `${API_BASE}/${clean}`;
+  const parts = clean.replace(/^uploads\//, '').split('/');
+  return `${base}/preview/${parts.join('/')}`;
+}
+
+function getDownloadUrl(filePath) {
+  if (!filePath) return '#';
+  if (filePath.startsWith('http://') || filePath.startsWith('https://')) return filePath;
+
+  const base = getApiBase();
+  const clean = filePath.replace(/\\/g, '/').replace(/^\/+/, '');
+  return `${base}/${clean}`;
 }
 
 function getFileExt(filePath) {
@@ -56,7 +67,12 @@ export default function StudentReports() {
     if (previewFile && previewFile.ext === 'docx' && docxContainerRef.current) {
       setDocxLoading(true);
       fetch(previewFile.url)
-        .then(res => res.blob())
+        .then(res => {
+          if (!res.ok) {
+            throw new Error(`Không thể tải file từ máy chủ (Mã lỗi ${res.status})`);
+          }
+          return res.blob();
+        })
         .then(blob => {
           if (docxContainerRef.current) docxContainerRef.current.innerHTML = '';
           import('docx-preview').then(({ renderAsync }) => {
@@ -68,7 +84,13 @@ export default function StudentReports() {
                 .catch(err => {
                   console.error('Error rendering DOCX:', err);
                   if (docxContainerRef.current) {
-                    docxContainerRef.current.innerHTML = `<p style="color: var(--danger); padding: 2rem; text-align: center;">Không thể render file Word trực tiếp. Vui lòng tải về để xem.</p>`;
+                    docxContainerRef.current.innerHTML = `
+                      <div style="padding: 2.5rem 1rem; text-align: center; color: var(--text-main);">
+                        <p style="margin-bottom: 1rem; font-weight: 500;">Không thể hiển thị bản xem trước cho file Word này trực tiếp.</p>
+                        <a href="${getDownloadUrl(previewFile.filePath || previewFile.url)}" download class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                          Tải file về máy để xem
+                        </a>
+                      </div>`;
                   }
                 })
                 .finally(() => setDocxLoading(false));
@@ -78,7 +100,13 @@ export default function StudentReports() {
         .catch(err => {
           console.error('Error fetching DOCX blob:', err);
           if (docxContainerRef.current) {
-            docxContainerRef.current.innerHTML = `<p style="color: var(--danger); padding: 2rem; text-align: center;">Lỗi tải file từ server.</p>`;
+            docxContainerRef.current.innerHTML = `
+              <div style="padding: 2.5rem 1rem; text-align: center; color: var(--danger); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem;">
+                <p style="font-weight: 500;">${err.message || 'Lỗi tải file từ server.'}</p>
+                <a href="${getDownloadUrl(previewFile.filePath || previewFile.url)}" download class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                  Tải file về máy
+                </a>
+              </div>`;
           }
           setDocxLoading(false);
         });

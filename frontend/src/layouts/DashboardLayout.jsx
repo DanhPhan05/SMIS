@@ -524,7 +524,7 @@ export default function DashboardLayout({ children }) {
 
         {/* Content Body Area */}
         <main style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', backgroundColor: '#f1f5f9' }}>
-          <div className="animate-fade-in">
+          <div className="animate-fade-in" style={{ maxWidth: '1280px', margin: '0 auto', width: '100%' }}>
             {children}
           </div>
         </main>

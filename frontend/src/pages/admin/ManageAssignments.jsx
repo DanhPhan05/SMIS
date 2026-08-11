@@ -3,6 +3,26 @@ import DashboardLayout from '../../layouts/DashboardLayout';
 import api from '../../services/api';
 import { Plus, X, Check } from 'lucide-react';
 
+// Dữ liệu Ngành / Chuyên ngành
+const NGANH_DATA = [
+  {
+    label: 'Ngành Công nghệ thông tin',
+    value: 'CNTT',
+    children: [
+      { label: 'Chuyên ngành Công nghệ phần mềm', value: 'CNTT - CN Phần mềm' },
+      { label: 'Chuyên ngành Mạng máy tính và An ninh mạng', value: 'CNTT - Mạng & An ninh mạng' },
+      { label: 'Chuyên ngành Hệ thống thông tin', value: 'CNTT - Hệ thống thông tin' },
+      { label: 'Chuyên ngành Khoa học dữ liệu', value: 'CNTT - Khoa học dữ liệu' },
+      { label: 'Chuyên ngành Thiết kế vi mạch', value: 'CNTT - Thiết kế vi mạch' },
+    ],
+  },
+  { label: 'Ngành Kỹ thuật phần mềm', value: 'Kỹ thuật phần mềm', children: [] },
+  { label: 'Ngành Trí tuệ nhân tạo', value: 'Trí tuệ nhân tạo', children: [] },
+  { label: 'Ngành Thương mại điện tử', value: 'Thương mại điện tử', children: [] },
+];
+
+const NOTES_MAX_LENGTH = 200;
+
 export default function ManageAssignments() {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -10,7 +30,7 @@ export default function ManageAssignments() {
   const [showForm, setShowForm] = useState(false);
   const [students, setStudents] = useState([]);
   const [teachers, setTeachers] = useState([]);
-  const [form, setForm] = useState({ student_id: '', teacher_id: '', notes: '' });
+  const [form, setForm] = useState({ student_id: '', teacher_id: '', nganh: '', notes: '' });
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -27,7 +47,7 @@ export default function ManageAssignments() {
   useEffect(() => { fetchAssignments(1); }, [fetchAssignments]);
 
   const openCreate = async () => {
-    setForm({ student_id: '', teacher_id: '', notes: '' }); setFormError('');
+    setForm({ student_id: '', teacher_id: '', nganh: '', notes: '' }); setFormError('');
     try {
       const [sRes, tRes] = await Promise.all([api.get('/students?limit=100'), api.get('/teachers?limit=100')]);
       setStudents(sRes.data.data || []);
@@ -39,7 +59,7 @@ export default function ManageAssignments() {
   const handleSave = async () => {
     setSaving(true); setFormError('');
     try {
-      await api.post('/assignments', { student_id: parseInt(form.student_id), teacher_id: parseInt(form.teacher_id), notes: form.notes });
+      await api.post('/assignments', { student_id: parseInt(form.student_id), teacher_id: parseInt(form.teacher_id), notes: form.notes ? `[${form.nganh}] ${form.notes}`.trim() : (form.nganh || '') });
       setShowForm(false); fetchAssignments(pagination.page);
     } catch (err) { setFormError(err.response?.data?.message || 'Có lỗi xảy ra'); }
     finally { setSaving(false); }
@@ -53,11 +73,11 @@ export default function ManageAssignments() {
       </div>
 
       {showForm && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="card" style={{ width: '480px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h2 style={{ fontWeight: 'bold' }}>Phân công mới</h2>
-              <button onClick={() => setShowForm(false)}><X size={20} /></button>
+        <div className="modal-overlay" onClick={() => setShowForm(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '540px' }}>
+            <div className="modal-header">
+              <h2 style={{ fontWeight: 'bold', fontSize: '1.15rem' }}>Phân công mới</h2>
+              <button onClick={() => setShowForm(false)} style={{ color: 'var(--text-muted)' }}><X size={20} /></button>
             </div>
             {formError && <div className="badge badge-danger" style={{ display: 'block', padding: '0.5rem', marginBottom: '1rem' }}>{formError}</div>}
             <div className="form-group">
@@ -75,8 +95,43 @@ export default function ManageAssignments() {
               </select>
             </div>
             <div className="form-group">
+              <label className="form-label">Ngành / Chuyên ngành</label>
+              <select
+                className="input"
+                value={form.nganh}
+                onChange={e => setForm(p => ({ ...p, nganh: e.target.value }))}
+              >
+                <option value="">-- Chọn ngành / chuyên ngành --</option>
+                {NGANH_DATA.map(nganh => (
+                  nganh.children.length > 0 ? (
+                    <optgroup key={nganh.value} label={nganh.label}>
+                      {nganh.children.map(cn => (
+                        <option key={cn.value} value={cn.value}>{cn.label}</option>
+                      ))}
+                    </optgroup>
+                  ) : (
+                    <option key={nganh.value} value={nganh.value}>{nganh.label}</option>
+                  )
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
               <label className="form-label">Ghi chú</label>
-              <input className="input" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
+              <textarea
+                className="input"
+                value={form.notes}
+                onChange={e => {
+                  if (e.target.value.length <= NOTES_MAX_LENGTH) {
+                    setForm(p => ({ ...p, notes: e.target.value }));
+                  }
+                }}
+                rows={3}
+                placeholder="Nhập ghi chú (tùy chọn)..."
+                style={{ resize: 'vertical', minHeight: '60px' }}
+              />
+              <div style={{ textAlign: 'right', fontSize: '0.75rem', color: form.notes.length >= NOTES_MAX_LENGTH ? 'var(--danger)' : 'var(--text-muted)', marginTop: '0.25rem' }}>
+                {form.notes.length}/{NOTES_MAX_LENGTH}
+              </div>
             </div>
             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
               <button className="btn btn-outline" onClick={() => setShowForm(false)}>Hủy</button>
@@ -100,7 +155,7 @@ export default function ManageAssignments() {
                     <td>{a.student?.full_name || `${a.student?.ho_ten_lot || ''} ${a.student?.ten || ''}`.trim() || '-'} <br /><small style={{ color: 'var(--text-muted)' }}>{a.student?.student_code}</small></td>
                     <td>{a.teacher?.full_name || '-'}</td>
                     <td>{a.assigned_date ? new Date(a.assigned_date).toLocaleDateString('vi-VN') : '-'}</td>
-                    <td>{a.notes || '-'}</td>
+                    <td style={{ maxWidth: '200px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{a.notes || '-'}</td>
                     <td><span className={`badge ${a.is_active ? 'badge-success' : 'badge-warning'}`}>{a.is_active ? 'Đang hoạt động' : 'Đã hủy'}</span></td>
                   </tr>
                 ))}
@@ -118,3 +173,4 @@ export default function ManageAssignments() {
     </DashboardLayout>
   );
 }
+
